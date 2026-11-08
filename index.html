@@ -173,7 +173,15 @@ textarea{min-height:130px;resize:vertical;line-height:1.7}
 .lr div{flex:1;min-width:0}
 .lr b{display:block;font-size:15px}
 .lr span{font-size:12px;color:var(--mu)}
-.lr em{flex:none;font-style:normal;font-size:12px;color:var(--aq)}
+.lr em{font-style:normal;font-size:12px;color:var(--aq)}
+.lr .ls{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.lr .bd{animation:none;font-size:11px;padding:3px 9px}
+.hb{display:flex;align-items:center;gap:10px}
+.bell{position:relative;padding:10px 14px;line-height:0}
+.bell em{position:absolute;top:-7px;right:-7px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--rd);color:#fff;font-size:11px;font-style:normal;font-weight:700;line-height:20px;text-align:center}
+.bell em:empty{display:none}
+.bell.on svg{animation:ring 2.4s ease-in-out infinite;transform-origin:50% 10%}
+@keyframes ring{0%,60%,100%{transform:none}10%{transform:rotate(14deg)}20%{transform:rotate(-12deg)}30%{transform:rotate(9deg)}40%{transform:rotate(-6deg)}50%{transform:rotate(3deg)}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <script>try{var q=JSON.parse(localStorage.getItem('ezt1'));if(q&&q.th=='light')document.documentElement.setAttribute('data-th','light')}catch(e){}</script>
@@ -181,7 +189,7 @@ textarea{min-height:130px;resize:vertical;line-height:1.7}
 <body>
 <div class="aur"><i></i><i></i><i></i></div>
 <div id="app">
-<header><div><small>متابعة طلبيات المندوبين</small><h1>ezORDER</h1></div><button class="gl" onclick="stg()">الإعدادات</button></header>
+<header><div><small>متابعة طلبيات المندوبين</small><h1>ezORDER</h1></div><div class="hb"><button class="gl bell" id="bl" onclick="bell()" aria-label="الإشعارات"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><em id="bc"></em></button><button class="gl" onclick="stg()">الإعدادات</button></div></header>
 <div id="bar"><button class="gl nd" onclick="nd()">بدء يوم جديد</button><button class="gl" id="dl" onclick="dys()"></button></div>
 <section id="hero"></section>
 <section id="dsr"></section>
@@ -208,7 +216,7 @@ function dt(ts){return new Date(ts).toLocaleDateString('ar-IQ',{day:'numeric',mo
 /* قراءة نص الواتساب: تحذف المذخر والتاريخ والملاحظة وتتجاهل الرموز وعلامة * */
 /* قراءة نص الواتساب بذكاء: صيدلية/صيدليه، مذخر/م.، مواد باسطر واحد (الاسم ثم العدد) أو سطرين (الاسم ثم العدد والشركة) */
 function nzd(c){return c.replace(/[٠-٩]/g,function(x){return x.charCodeAt(0)-1632})}
-function cln(raw){return raw.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu,'').replace(/[\u064B-\u0652\u0640]/g,'').replace(/(\S)_(?=\S)/g,'$1 ').replace(/[*_~]/g,'').replace(/\s+/g,' ').trim()}
+function cln(raw){return raw.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu,'').replace(/[\u064B-\u0652\u0640]/g,'').replace(/(^|[^A-Za-z])ق?jp[ij](?![A-Za-z])/gi,'$1').replace(/([\d٠-٩])\s*ق(?![\u0600-\u06FF])/g,'$1').replace(/(^|[^\u0600-\u06FF])ق\s*(?=[\d٠-٩])/g,'$1').replace(/(\S)_(?=\S)/g,'$1 ').replace(/[*_~]/g,'').replace(/\s+/g,' ').trim()}
 function parse(t){var o={ph:'',ds:[],it:[]},want='',L=[];
   String(t).split(/\n/).forEach(function(r){var raw=r.replace(/[\u200e\u200f]/g,''),c=cln(raw);if(c)L.push({c:c,e:/\u{1F48A}/u.test(raw)})});
   for(var i=0;i<L.length;i++){var c=L[i].c,cc=c.replace(/^(?:[-•·▪●]+|[\d٠-٩]+\s*[\.\)\-](?![\d٠-٩]))\s*/,''),k=kw(c,o);
@@ -252,12 +260,12 @@ function ope(h){$('sheet').innerHTML='<button class="x" onclick="cl()">×</butto
 function cl(){document.body.classList.remove('so')}
 /* الواجهة الرئيسية */
 function tl(k){return{out:'نافذة',part:'بنقوصات'}[k]||ST[k][0]}
-function inV(o,k){return o.st==k&&(k=='hold'||o.dy==VD)}
+function inV(o,k){return o.st==k&&o.dy==VD}
 function dl(ts){return new Date(ts).toLocaleDateString('ar-IQ',{weekday:'long',day:'numeric',month:'long'})}
 function R(){var c={},ks=Object.keys(ST);ks.forEach(function(k){c[k]=S.o.filter(function(o){return inV(o,k)}).length});
   var dd=S.ds.filter(function(d){return d.id==VD})[0]||S.ds[0];$('dl').textContent=(VD==S.cd?'اليوم: ':'يوم سابق: ')+dl(dd.s);
-  $('hero').innerHTML='<div><b>'+S.o.filter(function(o){return o.dy==VD}).length+'</b><span>طلبيات هذا اليوم</span></div><div><b>'+c.hold+'</b><span>طلبيات معلقة</span></div>';
-  dr();
+  $('hero').innerHTML='<div><b>'+S.o.filter(function(o){return o.dy==VD}).length+'</b><span>طلبيات هذا اليوم</span></div><div><b>'+S.o.filter(function(o){return o.st=='hold'}).length+'</b><span>طلبيات معلقة</span></div>';
+  dr();var bc=bn().length;$('bc').textContent=bc||'';$('bl').classList.toggle('on',bc>0);
   $('tbs').innerHTML=ks.map(function(k){return'<button id="t_'+k+'" class="'+(k==F?'on':'')+'" onclick="F=\''+k+'\';CF=\'\';R()">'+tl(k)+'<em>'+c[k]+'</em></button>'}).join('');
   var b=$('t_'+F),n=$('ind');n.style.width=b.offsetWidth+'px';n.style.transform='translateX('+b.offsetLeft+'px)';n.style.setProperty('--c',ST[F][1]);b.scrollIntoView({inline:'center',block:'nearest'});
   var L=S.o.filter(function(o){return inV(o,F)});CS=[];L.forEach(function(o){cos(o.i).forEach(function(x){if(CS.indexOf(x)<0)CS.push(x)})});
@@ -268,7 +276,7 @@ function card(o,i){var m=ST[o.st];return'<div class="cd" style="--i:'+i+';--c:'+
 function setSt(o,st){if(o.st=='hold'&&st!='hold')o.dy=S.cd;o.st=st;o.sub=SUB[st]?SUB[st][0]:''}
 /* المذاخر */
 var DL=[],DN=null;
-function vis(o){return o.dy==VD||o.st=='hold'}
+function vis(o){return o.dy==VD}
 function dnm(o){return(o.dist||'').trim()}
 function dr(){var V=S.o.filter(vis),ns=S.d.slice();V.forEach(function(o){var n=dnm(o);if(n&&ns.indexOf(n)<0)ns.push(n)});
   if(V.some(function(o){return!dnm(o)}))ns.push('');
@@ -279,35 +287,40 @@ function dv(i){DN=DL[i];dp();$('dpage').scrollTop=0;document.body.classList.add(
 function dcl(){DN=null;document.body.classList.remove('po')}
 function dp(){var n=DN,L=S.o.filter(function(o){return vis(o)&&dnm(o)==n}).sort(function(a,b){return b.ts-a.ts}),dd=S.ds.filter(function(d){return d.id==VD})[0]||S.ds[0],
   h='<div class="dh"><button class="gl" onclick="dcl()">رجوع</button><div><small>المذخر</small><h2>'+esc(n||'بدون مذخر')+'</h2></div></div><div class="pv">'+L.length+' طلبية - '+dl(dd.s)+'</div>';
-  Object.keys(ST).forEach(function(k){var g=L.filter(function(o){return o.st==k});if(g.length)h+='<div class="gh" style="--c:'+ST[k][1]+'">'+ST[k][0]+'<span>'+g.length+'</span></div><div style="display:grid;gap:12px">'+rows(g)+'</div>'});
+  if(L.length)h+='<div style="display:grid;gap:12px;margin-top:16px">'+rows(L)+'</div>';
   if(!L.length)h+='<div class="empty" style="margin-top:16px">لا توجد طلبيات لهذا المذخر</div>';
   $('dpage').innerHTML='<div class="dw">'+h+'</div>'}
+/* الإشعارات: الطلبيات المعلقة من الأيام السابقة */
+function bn(){return S.o.filter(function(o){return o.st=='hold'&&o.dy!=S.cd}).sort(function(a,b){return b.dy-a.dy||b.ts-a.ts})}
+function bell(){var L=bn(),ds={};S.ds.forEach(function(d){ds[d.id]=d.s});
+  ope('<h2>الإشعارات</h2><div class="pv">'+L.length+' طلبية معلقة من أيام سابقة</div>'+(L.length?'<div class="lw" style="margin-top:14px">'+L.map(function(o){return'<div class="lr" style="--c:'+ST.hold[1]+'" onclick="gn(\''+o.id+'\')"><div><b>'+esc(o.ph)+'</b><span>'+esc(o.dist||'بدون مذخر')+' | '+dl(ds[o.dy]||o.ts)+'</span></div><div class="ls"><span class="bd">'+esc(o.sub||'معلقة')+'</span><em>'+o.i.length+' مادة</em></div></div>'}).join('')+'</div>':'<div class="empty" style="margin-top:16px">لا توجد طلبيات معلقة من أيام سابقة</div>'))}
+function gn(id){var o=gO(id);if(!o)return;dcl();VD=o.dy;F='hold';CF='';R();det(id)}
 /* المظهر وطريقة العرض */
 function ap(){var l=S.th=='light';document.documentElement.setAttribute('data-th',l?'light':'dark');var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',l?'#f4f1ff':'#1a1033')}
 function rows(L){var v=S.v;if(v=='t')return tbl(L);if(v=='l')return'<div class="lw">'+L.map(lrow).join('')+'</div>';return L.map(card).join('')}
 function tbl(L){return'<div class="tw"><table><thead><tr><th>الصيدلية</th><th>المذخر</th><th>المندوب</th><th>المواد</th><th>الحالة</th></tr></thead><tbody>'+L.map(function(o){var m=ST[o.st];return'<tr style="--c:'+m[1]+'" onclick="det(\''+o.id+'\')"><td>'+esc(o.ph)+(o.nk?'<i>نواقص</i>':'')+'</td><td>'+esc(o.dist||'-')+'</td><td>'+esc(o.rep||'-')+'</td><td>'+o.i.length+'</td><td><span class="bd" style="--c:'+m[1]+'">'+m[0]+(o.sub?' - '+esc(o.sub):'')+'</span></td></tr>'}).join('')+'</tbody></table></div>'}
-function lrow(o){var m=ST[o.st];return'<div class="lr" style="--c:'+m[1]+'" onclick="det(\''+o.id+'\')"><div><b>'+esc(o.ph)+'</b><span>'+esc(o.dist||'بدون مذخر')+' | '+esc(o.rep||'بدون مندوب')+'</span></div><em>'+o.i.length+' مادة</em></div>'}
+function lrow(o){var m=ST[o.st];return'<div class="lr" style="--c:'+m[1]+'" onclick="det(\''+o.id+'\')"><div><b>'+esc(o.ph)+'</b><span>'+esc(o.dist||'بدون مذخر')+' | '+esc(o.rep||'بدون مندوب')+'</span></div><div class="ls"><span class="bd">'+m[0]+(o.sub?' - '+esc(o.sub):'')+'</span><em>'+o.i.length+' مادة</em></div></div>'}
 function so(){$('thm').innerHTML=[['dark','ليلي (الأصلي)'],['light','نهاري']].map(function(a){return'<button class="'+(S.th==a[0]?'on':'')+'" style="--c:var(--aq)" onclick="setT(\''+a[0]+'\')">'+a[1]+'</button>'}).join('');
   $('vws').innerHTML=[['c','بطاقات'],['t','جدول'],['l','قائمة']].map(function(a){return'<button class="'+(S.v==a[0]?'on':'')+'" style="--c:var(--aq)" onclick="setV(\''+a[0]+'\')">'+a[1]+'</button>'}).join('')}
 function setT(k){S.th=k;sv();ap();so()}
 function setV(k){S.v=k;sv();so();R()}
 /* الأيام */
 function nd(){var n=S.o.filter(function(o){return o.dy==S.cd&&(o.st=='new'||o.st=='wait'||o.st=='out')}).length;
-  if(!confirm('بدء يوم جديد؟\nالطلبيات غير المكتملة ('+n+') تنتقل إلى قسم المعلقة.'))return;
+  if(!confirm('بدء يوم جديد؟\nالطلبيات غير المكتملة ('+n+') تتحول إلى معلقة وتبقى في اليوم السابق، وتظهر في الإشعارات.'))return;
   S.o.forEach(function(o){if(o.dy==S.cd&&(o.st=='new'||o.st=='wait'||o.st=='out')){o.sub='كانت '+ST[o.st][0];o.st='hold'}});
   S.cd++;S.ds.push({id:S.cd,s:Date.now()});VD=S.cd;F='new';CF='';sv();cl();R();toast('بدأ يوم جديد')}
 function dys(){ope('<h2>الأيام</h2>'+S.ds.slice().reverse().map(function(d){return'<button class="ko'+(d.id==VD?' on':'')+'" style="--c:var(--aq)" onclick="VD='+d.id+';F=\'new\';cl();R()"><b>'+dl(d.s)+(d.id==S.cd?' (اليوم الحالي)':'')+'</b><span>'+S.o.filter(function(o){return o.dy==d.id}).length+' طلبية</span></button>'}).join(''))}
 /* إنشاء طلبية */
-function newO(){ope('<h2>طلبية جديدة</h2><label>نص الطلبية (الصقه من الواتساب)</label><div class="ta"><textarea id="tx" oninput="pv()" placeholder="الصق هنا"></textarea><button class="gl" onclick="pst()">لصق</button></div><div class="pv" id="pvw"></div><label>الصيدلية</label><input id="ph" oninput="rf()"><label>المذخر</label><input id="di"><div class="cs" id="dc"></div><label>المندوب</label><input id="rp"><div class="cs" id="rc"></div><button class="main" onclick="svN()">حفظ الطلبية</button>');rf()}
+function newO(){E={i:[{n:'',q:''}]};ope('<h2>طلبية جديدة</h2><label>نص الطلبية (الصقه من الواتساب)</label><div class="ta"><textarea id="tx" oninput="pv()" placeholder="الصق هنا"></textarea><button class="gl" onclick="pst()">لصق</button></div><div class="pv" id="pvw"></div><label>أو أضف المواد يدوياً</label><div id="its"></div><button class="gl" style="width:100%;margin-top:10px" onclick="E.i.push({n:\'\',q:\'\'});ri()">إضافة مادة</button><label>الصيدلية</label><input id="ph" oninput="rf()"><label>المذخر</label><input id="di"><div class="cs" id="dc"></div><label>المندوب</label><input id="rp"><div class="cs" id="rc"></div><button class="main" onclick="svN()">حفظ الطلبية</button>');ri();rf()}
 function pst(f){if(!navigator.clipboard||!navigator.clipboard.readText){toast('الصق النص يدوياً في الحقل');$('tx').focus();return}navigator.clipboard.readText().then(function(t){$('tx').value=t;window[f||'pv']()}).catch(function(){toast('اسمح بالوصول للحافظة أو الصق يدوياً');$('tx').focus()})}
 function pvh(p){var cs=cos(p.it);return p.it.length?(p.ds.length>1?'وجدت أكثر من مذخر: '+esc(p.ds.join('، '))+' - اختر واحداً<br>':'')+'تم التعرف على '+p.it.length+' مادة'+(cs.length?' - الشركات: '+esc(cs.join('، ')):'')+p.it.map(function(x,i){return'<div>'+(i+1)+'. '+esc(x.n)+(x.q?' &times; '+esc(x.q):'')+'</div>'}).join(''):''}
 function pv(){var p=parse($('tx').value);if(p.ph)$('ph').value=p.ph;if(p.ds.length==1)$('di').value=p.ds[0];$('pvw').innerHTML=pvh(p);rf()}
-function rf(){var p=parse($('tx')?$('tx').value:'');$('dc').innerHTML=chs('di',p.ds.map(function(x){return{n:x,w:'من الطلبية'}}).concat(S.d.filter(function(x){return p.ds.indexOf(x)<0})));$('rc').innerHTML=chs('rp',reps($('ph').value,p.it))}
-function svN(){var p=parse($('tx').value);if(!p.it.length){toast('الصق نص الطلبية أولاً');return}
-  var o={id:uid(),ph:$('ph').value.trim()||'بدون اسم',dist:$('di').value.trim(),rep:$('rp').value.trim(),i:p.it,note:'',st:'new',sub:'',ts:Date.now(),dy:S.cd};
+function rf(){var p=parse($('tx')?$('tx').value:'');$('dc').innerHTML=chs('di',p.ds.map(function(x){return{n:x,w:'من الطلبية'}}).concat(S.d.filter(function(x){return p.ds.indexOf(x)<0})));$('rc').innerHTML=chs('rp',reps($('ph').value,p.it.concat(E&&E.i?E.i:[])))}
+function svN(){var p=parse($('tx').value),mi=(E&&E.i?E.i:[]).filter(function(x){return x.n.trim()}).map(function(x){return{n:x.n.trim(),q:String(x.q||'').trim()}}),it=p.it.concat(mi);if(!it.length){toast('الصق نص الطلبية أو أضف مادة');return}
+  var o={id:uid(),ph:$('ph').value.trim()||'بدون اسم',dist:$('di').value.trim(),rep:$('rp').value.trim(),i:it,note:'',st:'new',sub:'',ts:Date.now(),dy:S.cd};
   S.o.unshift(o);addD(o.dist);sv();F='new';VD=S.cd;CF='';cl();R();toast('تم حفظ الطلبية')}
 /* اختيار نوع الإنشاء */
-function ch0(){ope('<h2>إنشاء</h2><button class="op" style="--c:var(--aq)" onclick="newO()"><b>أوردر جديد</b><span>الصق نص الواتساب لإنشاء طلبية</span></button><button class="op" style="--c:var(--pk);animation-delay:.12s" onclick="nk()"><b>إكمال نواقص طلبية</b><span>أدخل المواد والصيدلية والمذخر يدوياً</span></button>')}
+function ch0(){ope('<h2>إنشاء</h2><button class="op" style="--c:var(--aq)" onclick="newO()"><b>أوردر جديد</b><span>الصق نص الواتساب أو أدخل المواد والمعلومات يدوياً</span></button><button class="op" style="--c:var(--pk);animation-delay:.12s" onclick="nk()"><b>إكمال نواقص طلبية</b><span>أدخل المواد والصيدلية والمذخر يدوياً</span></button>')}
 function phs(){var m={},r=[];S.o.slice().sort(function(a,b){return b.ts-a.ts}).forEach(function(o){if(!m[o.ph]){m[o.ph]=1;r.push(o.ph)}});return r.slice(0,12)}
 function nk(){E={ph:'',dist:'',rep:'',i:[{n:'',q:''}]};ope('<h2>إكمال نواقص طلبية</h2><label>الصيدلية</label><input id="np" oninput="E.ph=this.value;rr()"><div class="cs" id="npc"></div><label>المذخر</label><input id="ed" oninput="E.dist=this.value"><div class="cs" id="edc"></div><label>المندوب</label><input id="er" oninput="E.rep=this.value"><div class="cs" id="erc"></div><label>المواد والأعداد</label><div id="its"></div><button class="gl" style="width:100%;margin-top:10px" onclick="E.i.push({n:\'\',q:\'\'});ri()">إضافة مادة</button><button class="main" onclick="svK()">حفظ</button>');
   $('npc').innerHTML=chs('np',phs());$('edc').innerHTML=chs('ed',S.d);ri();rr()}
