@@ -206,26 +206,38 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function toast(m){var t=$('tt');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove('on')},2200)}
 function dt(ts){return new Date(ts).toLocaleDateString('ar-IQ',{day:'numeric',month:'short'})+' '+new Date(ts).toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'})}
 /* قراءة نص الواتساب: تحذف المذخر والتاريخ والملاحظة وتتجاهل الرموز وعلامة * */
-function parse(t){var o={ph:'',di:'',it:[]},want='';String(t).split(/\n/).forEach(function(r){
-  var raw=r.replace(/[\u200e\u200f]/g,''),c=raw.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu,'').replace(/[*_~]/g,'').replace(/\s+/g,' ').trim();if(!c)return;
-  var d=c.replace(/[٠-٩]/g,function(x){return x.charCodeAt(0)-1632}),cc=c.replace(/^(?:[-•·▪●]+|[\d٠-٩]+\s*[\.\)\-](?![\d٠-٩]))\s*/,''),k=kw(c,o);
-  if(k!==null){want=k;return}
-  if(want){var w=want;want='';if(!/عدد\s*[:：]/.test(c)&&!itf(cc)){o[w]=o[w]||c;return}}
-  if(/^(المواد|ملاحظ)/.test(c))return;
-  if(/\d{1,4}\s*[\/\-]\s*\d{1,2}.*\d{1,2}:\d{2}/.test(d))return;
-  if(/عدد\s*[:：]/.test(c)){o.it.push(itm(c));return}
-  var f=itf(cc);if(f){o.it.push(f);return}
-  if(/\u{1F48A}/u.test(raw))o.it.push(itm(cc))});
+/* قراءة نص الواتساب بذكاء: صيدلية/صيدليه، مذخر/م.، مواد باسطر واحد (الاسم ثم العدد) أو سطرين (الاسم ثم العدد والشركة) */
+function nzd(c){return c.replace(/[٠-٩]/g,function(x){return x.charCodeAt(0)-1632})}
+function cln(raw){return raw.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu,'').replace(/[\u064B-\u0652\u0640]/g,'').replace(/(\S)_(?=\S)/g,'$1 ').replace(/[*_~]/g,'').replace(/\s+/g,' ').trim()}
+function parse(t){var o={ph:'',ds:[],it:[]},want='',L=[];
+  String(t).split(/\n/).forEach(function(r){var raw=r.replace(/[\u200e\u200f]/g,''),c=cln(raw);if(c)L.push({c:c,e:/\u{1F48A}/u.test(raw)})});
+  for(var i=0;i<L.length;i++){var c=L[i].c,cc=c.replace(/^(?:[-•·▪●]+|[\d٠-٩]+\s*[\.\)\-](?![\d٠-٩]))\s*/,''),k=kw(c,o);
+    if(k!==null){want=k;continue}
+    if(want){var w=want;want='';if(!/عدد\s*[:：]/.test(c)&&!itf(cc)&&!qfm(c)){putv(o,w,c);continue}}
+    if(/^(المواد|ملاحظ)/.test(c))continue;
+    if(/\d{1,4}\s*[\/\-]\s*\d{1,2}.*\d{1,2}:\d{2}/.test(nzd(c)))continue;
+    if(/عدد\s*[:：]/.test(c)){o.it.push(itm(c));continue}
+    var q=i+1<L.length?qfm(L[i+1].c):null;
+    if(q&&!qfm(c)&&/[A-Za-z\u0600-\u06FF]/.test(cc)){o.it.push({n:(cc+(q.w?' '+q.w:'')).trim(),q:q.q});i++;continue}
+    var f=itf(cc);if(f){o.it.push(f);continue}
+    if(L[i].e)o.it.push(itm(cc))}
   return o}
-/* كلمات الصيدلية والمذخر: القيمة بعد الكلمة (صيدلية / الصيدلية / مذخر / المذخر) */
-function kw(c,o){var re=/(^|[\s\-–—:：,،|])(?:ال)?(صيدلي[ةه]|مذخر)(?=$|[\s:：\-–—,،|])/g,ms=[],m,w='';
-  while(m=re.exec(c))ms.push({i:m.index,e:m.index+m[0].length,k:m[2]=='مذخر'?'di':'ph'});
+function putv(o,k,v){if(k=='ph'){if(!o.ph)o.ph=v;return}
+  v.split(/\s+(?:او|أو)\s+|\s*[\/\\،,|]\s*|\s+و\s+/).forEach(function(x){x=x.trim();if(x&&o.ds.indexOf(x)<0)o.ds.push(x)})}
+/* كلمات الصيدلية والمذخر: القيمة بعد الكلمة (صيدلية/صيدليه/الصيدلية، مذخر/المذخر/م.) */
+function kw(c,o){var re=/(^|[\s\-–—:：,،|])(?:(?:ال)?(ص[يى]دل[يى]?[ةه]|مذخر)(?=$|[\s:：\-–—,،|])|م\.)/g,ms=[],m,w='';
+  while(m=re.exec(c))ms.push({i:m.index,e:m.index+m[0].length,k:m[2]&&m[2].charAt(0)=='ص'?'ph':'di'});
   if(!ms.length)return null;
   ms.forEach(function(x,j){var v=c.slice(x.e,j+1<ms.length?ms[j+1].i:c.length).replace(/^[\s:：\-–—|,،]+/,'').replace(/[\s\-–—|,،]+$/,'');
-    if(v&&!o[x.k])o[x.k]=v;w=v?'':x.k});
+    if(v)putv(o,x.k,v);w=v?'':x.k});
   return w}
-/* مادة بدون كلمة عدد: الاسم ثم العدد، والعدد هو آخر رقم في السطر (يدعم 5+5 و 100+100) */
-function itf(c){var d=c.replace(/[٠-٩]/g,function(x){return x.charCodeAt(0)-1632}),m=d.match(/^(.*?)[\s:：=\-–—×*]+(\d+(?:[.,]\d+)?(?:\s*\+\s*\d+(?:[.,]\d+)?)*)$/);
+/* سطر يبدأ بعدد: 30 ديسما / 10 / 5+5 فيلادلفيا (الكلمة بعده شركة تُضاف لاسم المادة، وتُهمل إن كانت وحدة مثل علبة) */
+function qfm(c){var d=nzd(c),m=d.match(/^(\d{1,5}(?:[.,]\d+)?(?:\s*\+\s*\d{1,5}(?:[.,]\d+)?)*)(?:\s+(.+))?$/);
+  if(!m)return null;var w=m[2]?c.slice(c.length-m[2].length).trim():'';
+  if(w&&!/[A-Za-z\u0600-\u06FF]/.test(w))return null;
+  return{q:c.slice(0,m[1].length).replace(/\s+/g,''),w:/^(علبة|علب|حبة|حبات|كرتونة|كرتون|كارتون|قطعة|قطع|باكيت|شريط|قنينة|عبوة|بوكس|box|boxes|pcs|pc|pack)$/i.test(w)?'':w}}
+/* مادة في سطر واحد: الاسم ثم العدد، والعدد هو آخر رقم في السطر (يدعم 5+5 و 100+100) */
+function itf(c){var d=nzd(c),m=d.match(/^(.*?)[\s:：=\-–—×*]+(\d+(?:[.,]\d+)?(?:\s*\+\s*\d+(?:[.,]\d+)?)*)$/);
   if(!m)return null;var n=c.slice(0,m[1].length).trim();if(!/[A-Za-z\u0600-\u06FF]/.test(n))return null;
   return{n:n,q:c.slice(c.length-m[2].length).replace(/\s+/g,'')}}
 function itm(c){var d=c.replace(/[٠-٩]/g,function(x){return x.charCodeAt(0)-1632}),m=d.match(/^(.*?)\s*عدد\s*[:：]\s*(.+?)\s*$/);return m?{n:c.slice(0,m[1].length).trim(),q:m[2].replace(/\s+/g,'')}:{n:c.trim(),q:''}}
@@ -288,9 +300,9 @@ function dys(){ope('<h2>الأيام</h2>'+S.ds.slice().reverse().map(function(d
 /* إنشاء طلبية */
 function newO(){ope('<h2>طلبية جديدة</h2><label>نص الطلبية (الصقه من الواتساب)</label><div class="ta"><textarea id="tx" oninput="pv()" placeholder="الصق هنا"></textarea><button class="gl" onclick="pst()">لصق</button></div><div class="pv" id="pvw"></div><label>الصيدلية</label><input id="ph" oninput="rf()"><label>المذخر</label><input id="di"><div class="cs" id="dc"></div><label>المندوب</label><input id="rp"><div class="cs" id="rc"></div><button class="main" onclick="svN()">حفظ الطلبية</button>');rf()}
 function pst(f){if(!navigator.clipboard||!navigator.clipboard.readText){toast('الصق النص يدوياً في الحقل');$('tx').focus();return}navigator.clipboard.readText().then(function(t){$('tx').value=t;window[f||'pv']()}).catch(function(){toast('اسمح بالوصول للحافظة أو الصق يدوياً');$('tx').focus()})}
-function pvh(p){var cs=cos(p.it);return p.it.length?'تم التعرف على '+p.it.length+' مادة'+(cs.length?' - الشركات: '+esc(cs.join('، ')):'')+p.it.map(function(x,i){return'<div>'+(i+1)+'. '+esc(x.n)+(x.q?' &times; '+esc(x.q):'')+'</div>'}).join(''):''}
-function pv(){var p=parse($('tx').value);if(p.ph)$('ph').value=p.ph;if(p.di)$('di').value=p.di;$('pvw').innerHTML=pvh(p);rf()}
-function rf(){var p=parse($('tx')?$('tx').value:'');$('dc').innerHTML=chs('di',S.d);$('rc').innerHTML=chs('rp',reps($('ph').value,p.it))}
+function pvh(p){var cs=cos(p.it);return p.it.length?(p.ds.length>1?'وجدت أكثر من مذخر: '+esc(p.ds.join('، '))+' - اختر واحداً<br>':'')+'تم التعرف على '+p.it.length+' مادة'+(cs.length?' - الشركات: '+esc(cs.join('، ')):'')+p.it.map(function(x,i){return'<div>'+(i+1)+'. '+esc(x.n)+(x.q?' &times; '+esc(x.q):'')+'</div>'}).join(''):''}
+function pv(){var p=parse($('tx').value);if(p.ph)$('ph').value=p.ph;if(p.ds.length==1)$('di').value=p.ds[0];$('pvw').innerHTML=pvh(p);rf()}
+function rf(){var p=parse($('tx')?$('tx').value:'');$('dc').innerHTML=chs('di',p.ds.map(function(x){return{n:x,w:'من الطلبية'}}).concat(S.d.filter(function(x){return p.ds.indexOf(x)<0})));$('rc').innerHTML=chs('rp',reps($('ph').value,p.it))}
 function svN(){var p=parse($('tx').value);if(!p.it.length){toast('الصق نص الطلبية أولاً');return}
   var o={id:uid(),ph:$('ph').value.trim()||'بدون اسم',dist:$('di').value.trim(),rep:$('rp').value.trim(),i:p.it,note:'',st:'new',sub:'',ts:Date.now(),dy:S.cd};
   S.o.unshift(o);addD(o.dist);sv();F='new';VD=S.cd;CF='';cl();R();toast('تم حفظ الطلبية')}
