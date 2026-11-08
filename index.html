@@ -206,14 +206,28 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function toast(m){var t=$('tt');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove('on')},2200)}
 function dt(ts){return new Date(ts).toLocaleDateString('ar-IQ',{day:'numeric',month:'short'})+' '+new Date(ts).toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'})}
 /* قراءة نص الواتساب: تحذف المذخر والتاريخ والملاحظة وتتجاهل الرموز وعلامة * */
-function parse(t){var ph='',it=[];String(t).split(/\n/).forEach(function(r){
+function parse(t){var o={ph:'',di:'',it:[]},want='';String(t).split(/\n/).forEach(function(r){
   var raw=r.replace(/[\u200e\u200f]/g,''),c=raw.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu,'').replace(/[*_~]/g,'').replace(/\s+/g,' ').trim();if(!c)return;
-  var d=c.replace(/[٠-٩]/g,function(x){return x.charCodeAt(0)-1632}),m;
-  if(m=c.match(/^الصيدلية\s*[:：]\s*(.+)/)){ph=m[1].trim();return}
-  if(/^(المذخر|المواد|ملاحظ)/.test(c))return;
+  var d=c.replace(/[٠-٩]/g,function(x){return x.charCodeAt(0)-1632}),cc=c.replace(/^(?:[-•·▪●]+|[\d٠-٩]+\s*[\.\)\-](?![\d٠-٩]))\s*/,''),k=kw(c,o);
+  if(k!==null){want=k;return}
+  if(want){var w=want;want='';if(!/عدد\s*[:：]/.test(c)&&!itf(cc)){o[w]=o[w]||c;return}}
+  if(/^(المواد|ملاحظ)/.test(c))return;
   if(/\d{1,4}\s*[\/\-]\s*\d{1,2}.*\d{1,2}:\d{2}/.test(d))return;
-  if(/عدد\s*[:：]/.test(c)||/\u{1F48A}/u.test(raw))it.push(itm(c))});
-  return{ph:ph,it:it}}
+  if(/عدد\s*[:：]/.test(c)){o.it.push(itm(c));return}
+  var f=itf(cc);if(f){o.it.push(f);return}
+  if(/\u{1F48A}/u.test(raw))o.it.push(itm(cc))});
+  return o}
+/* كلمات الصيدلية والمذخر: القيمة بعد الكلمة (صيدلية / الصيدلية / مذخر / المذخر) */
+function kw(c,o){var re=/(^|[\s\-–—:：,،|])(?:ال)?(صيدلي[ةه]|مذخر)(?=$|[\s:：\-–—,،|])/g,ms=[],m,w='';
+  while(m=re.exec(c))ms.push({i:m.index,e:m.index+m[0].length,k:m[2]=='مذخر'?'di':'ph'});
+  if(!ms.length)return null;
+  ms.forEach(function(x,j){var v=c.slice(x.e,j+1<ms.length?ms[j+1].i:c.length).replace(/^[\s:：\-–—|,،]+/,'').replace(/[\s\-–—|,،]+$/,'');
+    if(v&&!o[x.k])o[x.k]=v;w=v?'':x.k});
+  return w}
+/* مادة بدون كلمة عدد: الاسم ثم العدد، والعدد هو آخر رقم في السطر (يدعم 5+5 و 100+100) */
+function itf(c){var d=c.replace(/[٠-٩]/g,function(x){return x.charCodeAt(0)-1632}),m=d.match(/^(.*?)[\s:：=\-–—×*]+(\d+(?:[.,]\d+)?(?:\s*\+\s*\d+(?:[.,]\d+)?)*)$/);
+  if(!m)return null;var n=c.slice(0,m[1].length).trim();if(!/[A-Za-z\u0600-\u06FF]/.test(n))return null;
+  return{n:n,q:c.slice(c.length-m[2].length).replace(/\s+/g,'')}}
 function itm(c){var d=c.replace(/[٠-٩]/g,function(x){return x.charCodeAt(0)-1632}),m=d.match(/^(.*?)\s*عدد\s*[:：]\s*(.+?)\s*$/);return m?{n:c.slice(0,m[1].length).trim(),q:m[2].replace(/\s+/g,'')}:{n:c.trim(),q:''}}
 function cos(items){var r=[];items.forEach(function(x){var l=(x.n||'').toLowerCase();S.t.forEach(function(t){if(t.c&&l.indexOf(t.c.toLowerCase())>-1&&r.indexOf(t.c)<0)r.push(t.c)})});return r}
 function reps(ph,items){var m={},r=[],k=ph.trim().toLowerCase();S.o.forEach(function(o){if(o.rep&&o.ph.trim().toLowerCase()===k)m[o.rep]=(m[o.rep]||0)+1});
@@ -275,7 +289,7 @@ function dys(){ope('<h2>الأيام</h2>'+S.ds.slice().reverse().map(function(d
 function newO(){ope('<h2>طلبية جديدة</h2><label>نص الطلبية (الصقه من الواتساب)</label><div class="ta"><textarea id="tx" oninput="pv()" placeholder="الصق هنا"></textarea><button class="gl" onclick="pst()">لصق</button></div><div class="pv" id="pvw"></div><label>الصيدلية</label><input id="ph" oninput="rf()"><label>المذخر</label><input id="di"><div class="cs" id="dc"></div><label>المندوب</label><input id="rp"><div class="cs" id="rc"></div><button class="main" onclick="svN()">حفظ الطلبية</button>');rf()}
 function pst(f){if(!navigator.clipboard||!navigator.clipboard.readText){toast('الصق النص يدوياً في الحقل');$('tx').focus();return}navigator.clipboard.readText().then(function(t){$('tx').value=t;window[f||'pv']()}).catch(function(){toast('اسمح بالوصول للحافظة أو الصق يدوياً');$('tx').focus()})}
 function pvh(p){var cs=cos(p.it);return p.it.length?'تم التعرف على '+p.it.length+' مادة'+(cs.length?' - الشركات: '+esc(cs.join('، ')):'')+p.it.map(function(x,i){return'<div>'+(i+1)+'. '+esc(x.n)+(x.q?' &times; '+esc(x.q):'')+'</div>'}).join(''):''}
-function pv(){var p=parse($('tx').value);if(p.ph)$('ph').value=p.ph;$('pvw').innerHTML=pvh(p);rf()}
+function pv(){var p=parse($('tx').value);if(p.ph)$('ph').value=p.ph;if(p.di)$('di').value=p.di;$('pvw').innerHTML=pvh(p);rf()}
 function rf(){var p=parse($('tx')?$('tx').value:'');$('dc').innerHTML=chs('di',S.d);$('rc').innerHTML=chs('rp',reps($('ph').value,p.it))}
 function svN(){var p=parse($('tx').value);if(!p.it.length){toast('الصق نص الطلبية أولاً');return}
   var o={id:uid(),ph:$('ph').value.trim()||'بدون اسم',dist:$('di').value.trim(),rep:$('rp').value.trim(),i:p.it,note:'',st:'new',sub:'',ts:Date.now(),dy:S.cd};
@@ -297,7 +311,10 @@ function det(id){var o=gO(id);if(!o)return;var m=ST[o.st],cs=cos(o.i),ms=o.miss|
   +(cs.length?'<div class="cs">'+cs.map(function(c){return'<span class="ch on">'+esc(c)+'</span>'}).join('')+'</div>':'')
   +'<label>المواد ('+o.i.length+')</label><div class="rh"><span>العدد</span><span>المادة</span><span>#</span></div>'+o.i.map(function(x,i){var mm=ms.filter(function(k){return k.n===x.n})[0],q=String(x.q||'-');return'<div class="rd"><div class="qc" style="font-size:'+(q.length>8?14:q.length>5?17:21)+'px"><em>عدد</em>'+esc(q)+(mm?'<small>ناقص '+esc(mm.q)+'</small>':'')+'</div><span>'+esc(x.n)+(x.s?' <i>ناقص</i>':'')+'</span><div class="ix">'+(i+1)+'</div></div>'}).join('')
   +'<button class="main" onclick="jz(\''+id+'\')">جهزت</button><div class="two"><button class="gl bk" onclick="edt(\''+id+'\')">تعديل</button><button class="dg" onclick="del(\''+id+'\')">حذف</button></div>')}
-function jz(id){ope('<h2>جهزت</h2><button class="op" style="--c:var(--mt)" onclick="jf(\''+id+'\')"><b>جهزت كاملة</b><span>تنتقل الطلبية إلى قسم المكتمل</span></button><button class="op" style="--c:var(--sn);animation-delay:.12s" onclick="jm(\''+id+'\')"><b>مواد نقص</b><span>حدد المواد الناقصة والعدد الناقص</span></button><button class="gl bk" style="width:100%;margin-top:16px" onclick="det(\''+id+'\')">رجوع</button>')}
+function jz(id){ope('<h2>جهزت</h2><button class="op" style="--c:var(--mt)" onclick="jf(\''+id+'\')"><b>جهزت كاملة</b><span>تنتقل الطلبية إلى قسم المكتمل</span></button><button class="op" style="--c:var(--sn);animation-delay:.12s" onclick="jm(\''+id+'\')"><b>مواد نقص</b><span>حدد المواد الناقصة والعدد الناقص</span></button><label>حالات أخرى</label><div class="sg">'+['wait','hold','block','out','rej'].map(function(k){return'<button style="border-color:'+ST[k][1]+'" onclick="jo(\''+id+'\',\''+k+'\')">'+ST[k][0]+'</button>'}).join('')+'</div><button class="gl bk" style="width:100%;margin-top:16px" onclick="det(\''+id+'\')">رجوع</button>')}
+function jo(id,k){if(!SUB[k]){jq(id,k,0);return}
+  ope('<h2>'+ST[k][0]+'</h2><div class="pv">اختر الحالة</div>'+SUB[k].map(function(x,i){return'<button class="ko" style="--c:'+ST[k][1]+'" onclick="jq(\''+id+'\',\''+k+'\','+i+')"><b>'+x+'</b></button>'}).join('')+'<button class="gl bk" style="width:100%;margin-top:16px" onclick="jz(\''+id+'\')">رجوع</button>')}
+function jq(id,k,i){var o=gO(id);setSt(o,k);if(SUB[k])o.sub=SUB[k][i];o.miss=[];sv();cl();R();toast('تم نقل الطلبية إلى '+ST[k][0])}
 function jf(id){var o=gO(id);setSt(o,'done');o.miss=[];sv();cl();R();toast('تم تجهيز الطلبية كاملة')}
 function jm(id){MO=gO(id);M={};ope('<h2>مواد نقص</h2><div class="pv">اختر المواد الناقصة ثم اكتب العدد الناقص لكل مادة</div><div id="mi"></div><button class="main" onclick="jd()">تم</button><button class="gl bk" style="width:100%;margin-top:12px" onclick="jz(\''+id+'\')">رجوع</button>');mr()}
 function mr(){$('mi').innerHTML=MO.i.map(function(x,i){var on=M[i]!=null;return'<div class="mr'+(on?' on':'')+'"><button class="tg" onclick="mt('+i+')">'+(on?'&#10003;':'')+'</button><span>'+esc(x.n)+'<small>المطلوب: '+esc(x.q||'-')+'</small></span>'+(on?'<input placeholder="الناقص" value="'+esc(M[i])+'" oninput="M['+i+']=this.value">':'')+'</div>'}).join('')}
